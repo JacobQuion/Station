@@ -92,6 +92,13 @@ export function Icon({ name, size = 16 }: { name: string; size?: number }) {
         <path d="M12.6 10.6l.5 1.5 1.5.5-1.5.5-.5 1.5-.5-1.5-1.5-.5 1.5-.5z" />
       </>
     ),
+    beaker: (
+      <>
+        <line x1="5.4" y1="1.6" x2="10.6" y2="1.6" />
+        <path d="M6.4 1.6v4.9L3.3 12a1.7 1.7 0 0 0 1.5 2.5h6.4A1.7 1.7 0 0 0 12.7 12L9.6 6.5V1.6" />
+        <line x1="4.2" y1="10.3" x2="11.8" y2="10.3" />
+      </>
+    ),
     sun: (
       <>
         <circle cx="8" cy="8" r="3.1" />
@@ -106,10 +113,50 @@ export function Icon({ name, size = 16 }: { name: string; size?: number }) {
       </>
     ),
     moon: <path d="M13 9.6A5.6 5.6 0 0 1 6.4 3a5.6 5.6 0 1 0 6.6 6.6z" />,
+    chart: (
+      <>
+        <line x1="2.5" y1="13.5" x2="13.5" y2="13.5" />
+        <rect x="3.5" y="8" width="2.6" height="5.5" />
+        <rect x="6.9" y="4.5" width="2.6" height="9" />
+        <rect x="10.3" y="6.5" width="2.6" height="7" />
+      </>
+    ),
+    download: (
+      <>
+        <path d="M8 2.2v7.6" />
+        <polyline points="5 7 8 10 11 7" />
+        <path d="M2.8 11.4v1.4a1 1 0 0 0 1 1h8.4a1 1 0 0 0 1-1v-1.4" />
+      </>
+    ),
+    eye: (
+      <>
+        <path d="M1.4 8S4 3.6 8 3.6 14.6 8 14.6 8 12 12.4 8 12.4 1.4 8 1.4 8z" />
+        <circle cx="8" cy="8" r="2.1" />
+      </>
+    ),
+    chevronDown: <polyline points="4 6.5 8 10.5 12 6.5" />,
+    chevronUp: <polyline points="4 9.5 8 5.5 12 9.5" />,
+    // A cog: body, hub, and eight stubby teeth. The old path was a dot with
+    // thin radiating spokes, which read as a sun rather than a gear.
     gear: (
       <>
-        <circle cx="8" cy="8" r="2.3" />
-        <path d="M8 1.6v1.8M8 12.6v1.8M14.4 8h-1.8M3.4 8H1.6M12.5 3.5l-1.3 1.3M4.8 11.2l-1.3 1.3M12.5 12.5l-1.3-1.3M4.8 4.8 3.5 3.5" />
+        <circle cx="8" cy="8" r="4.3" />
+        <circle cx="8" cy="8" r="1.6" />
+        {[0, 45, 90, 135, 180, 225, 270, 315].map((deg) => {
+          const rad = (deg * Math.PI) / 180;
+          const c = Math.cos(rad);
+          const s = Math.sin(rad);
+          return (
+            <line
+              key={deg}
+              x1={(8 + 4.1 * c).toFixed(2)}
+              y1={(8 + 4.1 * s).toFixed(2)}
+              x2={(8 + 6.4 * c).toFixed(2)}
+              y2={(8 + 6.4 * s).toFixed(2)}
+              strokeWidth="2"
+            />
+          );
+        })}
       </>
     ),
   };
