@@ -1,0 +1,33 @@
+{
+  "name": "station",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Import your school life. See everything. Do the next thing.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "serve": "node server/index.js",
+    "typecheck": "tsc -b --noEmit false --force",
+    "test": "esbuild scripts/planner.test.ts --bundle --platform=node --format=esm --outfile=node_modules/.cache/station-test.mjs --log-level=error && node node_modules/.cache/station-test.mjs",
+    "format": "prettier --write \"src/**/*.{ts,tsx,css}\" \"scripts/**/*.ts\" \"server/*.js\"",
+    "test:e2e": "node scripts/flow.test.mjs"
+  },
+  "dependencies": {
+    "date-fns": "^4.1.0",
+    "ical.js": "^2.1.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "zustand": "^5.0.3"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "playwright-core": "^1.50.0",
+    "prettier": "^3.9.6",
+    "typescript": "^5.7.3",
+    "vite": "^6.1.0"
+  }
+}
