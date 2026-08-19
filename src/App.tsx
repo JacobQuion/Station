@@ -1,23 +1,22 @@
 import { useEffect, useState } from 'react';
 import { useStation } from './store/useStation';
 import { ImportView } from './views/Import';
-import { Dashboard } from './views/Dashboard';
-import { Focus } from './views/Focus';
+import { View } from './views/View';
 import { SettingsView } from './views/SettingsView';
 import { Icon } from './components/ui';
 
-type Tab = 'import' | 'see' | 'do' | 'settings';
+type Tab = 'import' | 'view' | 'settings';
 
-/** `step` is not shown; it maps the Cmd-1/2/3 shortcuts onto the three steps. */
-const TABS: Array<{ id: Tab; step: string; label: string }> = [
-  { id: 'import', step: '1', label: 'Import' },
-  { id: 'see', step: '2', label: 'See' },
-  { id: 'do', step: '3', label: 'Do' },
+/** `step` is not shown; it maps the Cmd-1…Cmd-3 shortcuts onto the tabs. */
+const TABS: Array<{ id: Tab; step: string; label: string; icon: string }> = [
+  { id: 'import', step: '1', label: 'Import', icon: 'download' },
+  { id: 'view', step: '2', label: 'View', icon: 'eye' },
+  { id: 'settings', step: '3', label: 'Settings', icon: 'gear' },
 ];
 
 export default function App() {
   const { onboarded, items, error, notice, dismiss, theme, replan } = useStation();
-  const [tab, setTab] = useState<Tab>(onboarded ? 'see' : 'import');
+  const [tab, setTab] = useState<Tab>(onboarded ? 'view' : 'import');
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -39,7 +38,7 @@ export default function App() {
     return () => document.removeEventListener('visibilitychange', onVisible);
   }, [replan]);
 
-  // ⌘1/2/3 to move between the three steps.
+  // ⌘1–⌘3 to move between the tabs.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (!(e.metaKey || e.ctrlKey)) return;
@@ -72,29 +71,18 @@ export default function App() {
               className="tab"
               aria-current={tab === t.id}
               onClick={() => setTab(t.id)}
-              disabled={t.id !== 'import' && !items.length}
+              disabled={t.id === 'view' && !items.length}
             >
+              <Icon name={t.icon} size={13} />
               {t.label}
             </button>
           ))}
         </nav>
-
-        <div className="spacer" />
-
-        <button
-          className="btn btn-ghost btn-sm"
-          aria-current={tab === 'settings'}
-          onClick={() => setTab('settings')}
-          aria-label="Settings"
-        >
-          <Icon name="gear" size={15} />
-        </button>
       </header>
 
       <main className="main">
-        {tab === 'import' && <ImportView onDone={() => setTab('see')} />}
-        {tab === 'see' && <Dashboard onGoFocus={() => setTab('do')} />}
-        {tab === 'do' && <Focus onGoImport={() => setTab('import')} />}
+        {tab === 'import' && <ImportView onDone={() => setTab('view')} />}
+        {tab === 'view' && <View onGoImport={() => setTab('import')} />}
         {tab === 'settings' && <SettingsView />}
       </main>
 
