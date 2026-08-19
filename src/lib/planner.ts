@@ -15,9 +15,11 @@ import {
 import { newId } from './id';
 
 const HOUR = 60;
+/** One second, in minutes. Work below this is a rounding residue, not a task. */
+const EPS = 1 / 60;
 
 export const remainingMin = (i: Item) =>
-  i.status === 'done' ? 0 : Math.max(0, Math.round(i.estimateMin - i.progressMin));
+  i.status === 'done' ? 0 : Math.max(0, i.estimateMin - i.progressMin);
 
 /**
  * Something you have to physically be at, so the planner must route around it.
@@ -73,15 +75,20 @@ interface Cursor {
   capacity: number;
 }
 
-/** Takes up to `want` minutes out of a day's remaining free time. */
-function take(cursor: Cursor, want: number, s: Settings): Interval | null {
+/**
+ * Takes up to `want` minutes out of a day's remaining free time, never running
+ * past `notAfter`. The deadline is checked *before* the slot is consumed —
+ * otherwise a rejected placement would still burn the window for everyone else.
+ */
+function take(cursor: Cursor, want: number, s: Settings, notAfter: Date | null): Interval | null {
   // `minBlockMin` exists to stop the planner shredding big tasks into useless
   // fragments. It shouldn't strand the *tail* of an almost-finished item, so
   // when the work left is already smaller than the minimum, that becomes the
   // minimum — otherwise a 10-minute remainder reads as "won't fit".
+  if (want < EPS) return null;
   const floor = Math.min(s.minBlockMin, want);
   const budget = Math.min(want, cursor.capacity - cursor.used);
-  if (budget < floor) return null;
+  if (budget < floor || budget < EPS) return null;
 
   for (let i = 0; i < cursor.slots.length; i++) {
     const slot = cursor.slots[i];
@@ -92,7 +99,8 @@ function take(cursor: Cursor, want: number, s: Settings): Interval | null {
     if (length < floor) continue;
 
     const start = new Date(slot.start);
-    const end = new Date(+start + length * 60_000);
+    const end = new Date(+start + Math.round(length * 1000) * 60);
+    if (notAfter && end > notAfter) continue;
 
     // Consume the slot plus a break, so back-to-back blocks aren't punishing.
     const resume = new Date(+end + s.breakMin * 60_000);
@@ -157,16 +165,15 @@ export function plan({ items, settings: s, now = new Date(), history = [] }: Pla
   const place = (item: Item, deadline: Date | null) => {
     let left = outstanding.get(item.id) ?? 0;
     for (const day of days) {
-      if (left <= 0) break;
+      if (left <= EPS) break;
       if (deadline && day.date > deadline) break;
       // Bounded by how many blocks a day could physically hold, so an unusual
       // capacity/block-size combination can't cut a day short.
       const maxBlocks = Math.ceil(s.dailyCapacityMin / Math.max(5, s.minBlockMin)) + 2;
-      for (let attempt = 0; attempt < maxBlocks && left > 0; attempt++) {
-        const slot = take(day.cursor, left, s);
+      for (let attempt = 0; attempt < maxBlocks && left > EPS; attempt++) {
+        const slot = take(day.cursor, left, s, deadline);
         if (!slot) break;
-        if (deadline && slot.end > deadline) break;
-        const minutes = mins(slot.start, slot.end);
+        const minutes = (+slot.end - +slot.start) / 60_000;
         blocks.push({
           id: newId('blk'),
           itemId: item.id,
@@ -179,7 +186,7 @@ export function plan({ items, settings: s, now = new Date(), history = [] }: Pla
         left -= minutes;
       }
     }
-    outstanding.set(item.id, Math.max(0, left));
+    outstanding.set(item.id, left > EPS ? left : 0);
   };
 
   // Pass 1 — fit everything inside its deadline, most urgent first.
@@ -193,7 +200,7 @@ export function plan({ items, settings: s, now = new Date(), history = [] }: Pla
 
   // Pass 2 — park the overflow wherever it fits, flagged as past-deadline.
   for (const item of byDeadline) {
-    if ((outstanding.get(item.id) ?? 0) > 0) place(item, null);
+    if ((outstanding.get(item.id) ?? 0) > EPS) place(item, null);
   }
 
   const risks: Risk[] = [];
