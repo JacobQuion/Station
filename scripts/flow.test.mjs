@@ -18,15 +18,14 @@ const ok = (l, c) => { if (!c) failed++; console.log(`${c ? '  ok  ' : ' FAIL '}
 
 await page.goto(BASE, { waitUntil: 'networkidle' });
 await page.getByRole('button', { name: /sample semester/i }).click();
-await page.waitForSelector('.narrow');
+await page.waitForSelector('.work');
 
 const S = () => page.evaluate(() => JSON.parse(localStorage['station.v1']).state);
 let s = await S();
 ok(`demo imported (${s.items.length} items, ${s.blocks.length} blocks)`, s.items.length > 30 && s.blocks.length > 0);
 ok('plan persisted to localStorage', Boolean(s.lastPlan));
 
-// ── Do screen: complete the current block ──────────────────────────────
-await page.getByRole('button', { name: /^Do$/ }).click();
+// ── The now-card sits on the View page, above today's rail ─────────────
 await page.waitForSelector('.now-card');
 const firstTitle = await page.locator('.now-title').textContent();
 const before = await S();
@@ -70,7 +69,7 @@ await page.evaluate(() => {
   localStorage['station.v1'] = JSON.stringify(raw);
 });
 await page.reload({ waitUntil: 'networkidle' });
-await page.waitForSelector('.now-card, .narrow', { timeout: 10000 });
+await page.waitForSelector('.now-card, .work', { timeout: 10000 });
 await page.waitForTimeout(800);
 const behind = await S();
 ok(`overdue blocks marked missed (${behind.blocks.filter((x) => x.status === 'missed').length})`,
@@ -81,7 +80,7 @@ ok('no planned block is left in the past',
    !behind.blocks.some((x) => x.status === 'planned' && Date.parse(x.end) < Date.now() - 6e4));
 
 // ── Settings feed straight back into the plan ──────────────────────────
-await page.locator('button[aria-label="Settings"]').click();
+await page.locator('nav.tabs button', { hasText: 'Settings' }).click();
 await page.waitForSelector('#s-cap');
 const capBefore = (await S()).blocks.filter((x) => x.status === 'planned').length;
 await page.locator('#s-cap').fill('60');
