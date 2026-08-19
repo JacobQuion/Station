@@ -27,6 +27,8 @@ interface State {
   blocks: Block[];
   settings: Settings;
   onboarded: boolean;
+  /** First name, used only for the greeting. Stays in this browser. */
+  name: string;
   theme: 'dark' | 'light';
   lastPlan?: PlanResult;
   lastReplan?: ReplanReport;
@@ -51,6 +53,7 @@ interface State {
   replan: (reason?: string) => void;
 
   updateSettings: (patch: Partial<Settings>) => void;
+  setName: (name: string) => void;
   setTheme: (theme: 'dark' | 'light') => void;
   dismiss: () => void;
   reset: () => void;
@@ -171,6 +174,7 @@ export const useStation = create<State>()(
         blocks: [],
         settings: DEFAULT_SETTINGS,
         onboarded: false,
+        name: '',
         theme: 'dark',
         busy: null,
         error: null,
@@ -360,6 +364,10 @@ export const useStation = create<State>()(
           rebuild();
         },
 
+        setName(name) {
+          set({ name: name.trim().slice(0, 40) });
+        },
+
         setTheme(theme) {
           set({ theme });
           document.documentElement.dataset.theme = theme;
@@ -391,6 +399,7 @@ export const useStation = create<State>()(
         blocks: s.blocks,
         settings: s.settings,
         onboarded: s.onboarded,
+        name: s.name,
         theme: s.theme,
         lastPlan: s.lastPlan,
       }),
