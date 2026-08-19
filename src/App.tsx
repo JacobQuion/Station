@@ -8,6 +8,7 @@ import { Icon } from './components/ui';
 
 type Tab = 'import' | 'see' | 'do' | 'settings';
 
+/** `step` is not shown; it maps the Cmd-1/2/3 shortcuts onto the three steps. */
 const TABS: Array<{ id: Tab; step: string; label: string }> = [
   { id: 'import', step: '1', label: 'Import' },
   { id: 'see', step: '2', label: 'See' },
@@ -73,7 +74,6 @@ export default function App() {
               onClick={() => setTab(t.id)}
               disabled={t.id !== 'import' && !items.length}
             >
-              <span className="step">{t.step}</span>
               {t.label}
             </button>
           ))}

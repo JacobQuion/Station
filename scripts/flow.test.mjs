@@ -26,7 +26,7 @@ ok(`demo imported (${s.items.length} items, ${s.blocks.length} blocks)`, s.items
 ok('plan persisted to localStorage', Boolean(s.lastPlan));
 
 // ── Do screen: complete the current block ──────────────────────────────
-await page.getByRole('button', { name: /^3Do$/ }).click();
+await page.getByRole('button', { name: /^Do$/ }).click();
 await page.waitForSelector('.now-card');
 const firstTitle = await page.locator('.now-title').textContent();
 const before = await S();
