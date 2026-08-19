@@ -130,6 +130,17 @@ export function buildDemo(sourceId: string, now = new Date()): { items: Item[]; 
   });
   push({ courseKey: 'engl', kind: 'assignment', title: 'Essay 2 Final', due: iso(at(now, 12, 23, 59)) });
 
+  // A deliberately tiny task, so the timer (and its one-minute warning) can be
+  // seen end to end without waiting out a real block. 1m 3s.
+  push({
+    courseKey: 'cs',
+    kind: 'task',
+    title: 'Sample: one-minute timer check',
+    due: iso(new Date(+now + 4 * 60 * 60_000)),
+    estimateMin: 1.05,
+    priority: 2,
+  });
+
   const examStart = at(now, 6, 15);
   push({
     courseKey: 'stat',
