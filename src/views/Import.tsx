@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useStation } from '../store/useStation';
 import { Icon } from '../components/ui';
 import { parseIcs } from '../lib/ics';
@@ -22,6 +22,48 @@ const STEPS = [
     p: 'Station tells you what to work on next, and rebuilds the plan when you fall behind.',
   },
 ];
+
+/* Field-level help. Opens as an overlay anchored to the label so the card never resizes. */
+function FieldHelp({ title, children }: { title: string; children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  const wrap = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (!wrap.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  return (
+    <div className="help" ref={wrap}>
+      <button
+        type="button"
+        className="help-trigger"
+        aria-expanded={open}
+        aria-label={title}
+        onClick={() => setOpen((o) => !o)}
+      >
+        ?
+      </button>
+      {open && (
+        <div className="help-pop" role="dialog" aria-label={title}>
+          <b>{title}</b>
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function ImportView({ onDone }: { onDone: () => void }) {
   const { sources, items, busy, connectIcs, connectCanvas, loadDemo, resync, removeSource } = useStation();
@@ -60,7 +102,7 @@ export function ImportView({ onDone }: { onDone: () => void }) {
     <>
       <div className="page-head">
         <h1>Import everything once.</h1>
-        <p>Station reads the calendar feeds your school already publishes — nothing to enter by hand.</p>
+        <p>Station reads your calendar automatically. Never enter tasks manually.</p>
       </div>
 
       {!sources.length && (
@@ -83,10 +125,9 @@ export function ImportView({ onDone }: { onDone: () => void }) {
               <Icon name="calendar" />
             </div>
             <div>
-              <h3>Calendar feed</h3>
+              <h3>Calendar Feed.</h3>
               <p>
-                Canvas, Blackboard, Moodle, Google Calendar, Apple Calendar — any <code>.ics</code>{' '}
-                subscription link.
+                Google Calendar, Apple Calendar, Canvas, any <code>.ics</code> subscription link.
               </p>
             </div>
           </div>
@@ -97,7 +138,26 @@ export function ImportView({ onDone }: { onDone: () => void }) {
             }}
           >
             <div className="field">
-              <label htmlFor="feed-url">Subscription link</label>
+              <div className="field-head">
+                <label htmlFor="feed-url">Subscription link</label>
+                <FieldHelp title="Where do I find this link?">
+                  <ol>
+                    <li>
+                      <b>Canvas</b> — Calendar → <code>Calendar Feed</code> in the right sidebar.
+                    </li>
+                    <li>
+                      <b>Google Calendar</b> — Settings → your calendar →{' '}
+                      <code>Secret address in iCal format</code>.
+                    </li>
+                    <li>
+                      <b>Blackboard</b> — Calendar → <code>Get External Calendar Link</code>.
+                    </li>
+                    <li>
+                      <b>Moodle</b> — Calendar → <code>Export calendar</code> → get URL.
+                    </li>
+                  </ol>
+                </FieldHelp>
+              </div>
               <input
                 id="feed-url"
                 className="input"
@@ -108,7 +168,7 @@ export function ImportView({ onDone }: { onDone: () => void }) {
                 autoComplete="off"
               />
               <span className="hint">
-                Fetched through Station's proxy — schools don't allow direct browser access.
+                Fetched through Station's proxy. School's typically have admin restrictions.
               </span>
             </div>
             <div className="row wrap">
@@ -129,24 +189,6 @@ export function ImportView({ onDone }: { onDone: () => void }) {
                 />
               </label>
             </div>
-            <details className="how">
-              <summary>Where do I find this link?</summary>
-              <ol>
-                <li>
-                  <b>Canvas</b> — Calendar → <code>Calendar Feed</code> in the right sidebar.
-                </li>
-                <li>
-                  <b>Google Calendar</b> — Settings → your calendar →{' '}
-                  <code>Secret address in iCal format</code>.
-                </li>
-                <li>
-                  <b>Blackboard</b> — Calendar → <code>Get External Calendar Link</code>.
-                </li>
-                <li>
-                  <b>Moodle</b> — Calendar → <code>Export calendar</code> → get URL.
-                </li>
-              </ol>
-            </details>
           </form>
         </div>
 
@@ -157,10 +199,8 @@ export function ImportView({ onDone }: { onDone: () => void }) {
               <Icon name="sparkles" />
             </div>
             <div>
-              <h3>Canvas account</h3>
-              <p>
-                Pulls courses, assignments, points and submission status — more detail than the calendar feed.
-              </p>
+              <h3>Canvas Account.</h3>
+              <p>Pulls courses, assignments, points, and submission status.</p>
             </div>
           </div>
           <form
@@ -181,7 +221,20 @@ export function ImportView({ onDone }: { onDone: () => void }) {
               />
             </div>
             <div className="field">
-              <label htmlFor="canvas-token">Access token</label>
+              <div className="field-head">
+                <label htmlFor="canvas-token">Access token</label>
+                <FieldHelp title="How to make a token">
+                  <ol>
+                    <li>
+                      In Canvas, open <code>Account → Settings</code>.
+                    </li>
+                    <li>
+                      Scroll to <b>Approved Integrations</b> → <code>+ New Access Token</code>.
+                    </li>
+                    <li>Name it "Station", leave the expiry blank, then copy the token.</li>
+                  </ol>
+                </FieldHelp>
+              </div>
               <input
                 id="canvas-token"
                 className="input"
@@ -198,18 +251,6 @@ export function ImportView({ onDone }: { onDone: () => void }) {
             <button className="btn btn-primary" disabled={!host.trim() || !token.trim() || Boolean(busy)}>
               {busy ? busy : 'Connect Canvas'}
             </button>
-            <details className="how">
-              <summary>How to make a token</summary>
-              <ol>
-                <li>
-                  In Canvas, open <code>Account → Settings</code>.
-                </li>
-                <li>
-                  Scroll to <b>Approved Integrations</b> → <code>+ New Access Token</code>.
-                </li>
-                <li>Name it "Station", leave the expiry blank, then copy the token.</li>
-              </ol>
-            </details>
           </form>
         </div>
       </div>
@@ -222,7 +263,7 @@ export function ImportView({ onDone }: { onDone: () => void }) {
             onDone();
           }}
         >
-          <Icon name="sparkles" size={14} /> Try it with a sample semester
+          <Icon name="beaker" size={14} /> Try it with a sample semester.
         </button>
       </div>
 
@@ -237,7 +278,7 @@ export function ImportView({ onDone }: { onDone: () => void }) {
               <div className="source-row" key={s.id}>
                 <div className="connector-icon" style={{ width: 32, height: 32, fontSize: 14 }}>
                   <Icon
-                    name={s.kind === 'canvas' ? 'sparkles' : s.kind === 'demo' ? 'sparkles' : 'calendar'}
+                    name={s.kind === 'canvas' ? 'sparkles' : s.kind === 'demo' ? 'beaker' : 'calendar'}
                     size={14}
                   />
                 </div>
@@ -267,11 +308,6 @@ export function ImportView({ onDone }: { onDone: () => void }) {
                 </button>
               </div>
             ))}
-          </div>
-          <div className="row" style={{ marginTop: 16 }}>
-            <button className="btn btn-primary btn-lg" onClick={onDone}>
-              See everything →
-            </button>
           </div>
         </div>
       )}
