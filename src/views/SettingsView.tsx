@@ -1,6 +1,10 @@
+import { useState } from 'react';
 import { DEFAULT_SETTINGS, useStation } from '../store/useStation';
 import { durationLabel } from '../lib/time';
-import { Icon } from '../components/ui';
+import { Icon, Modal } from '../components/ui';
+
+/* Typed verbatim to unlock the erase button — no accidental clicks. */
+const ERASE_PHRASE = 'erase everything';
 
 const DAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 const toTime = (m: number) =>
@@ -11,19 +15,52 @@ const fromTime = (v: string) => {
 };
 
 export function SettingsView() {
-  const { settings, updateSettings, theme, setTheme, reset, items, blocks } = useStation();
+  const { settings, updateSettings, theme, setTheme, reset, items, blocks, sources, name, setName } =
+    useStation();
   const s = settings;
+  const [erasing, setErasing] = useState(false);
+  const [phrase, setPhrase] = useState('');
+  const confirmed = phrase.trim().toLowerCase() === ERASE_PHRASE;
 
   return (
-    <>
+    <div className="settings-page">
       <div className="page-head">
-        <h1>How you work.</h1>
-        <p>
-          These constraints are what the planner schedules inside of. Change one and the whole plan rebuilds.
-        </p>
+        <h1>Settings.</h1>
+        <p>Add guardrails to your station. Change one preference and the whole schedule replans itself.</p>
       </div>
 
-      <div className="grid" style={{ gap: 20, maxWidth: 780 }}>
+      <div className="grid" style={{ gap: 20 }}>
+        <div className="card card-pad">
+          <div className="section-head" style={{ marginBottom: 4 }}>
+            <h2>You</h2>
+          </div>
+          <div className="field" style={{ maxWidth: 280 }}>
+            <label htmlFor="s-name">Greeting name</label>
+            <input
+              id="s-name"
+              className="input"
+              value={name}
+              placeholder="Jacob"
+              autoComplete="given-name"
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div className="card card-pad">
+          <div className="section-head">
+            <h2>Appearance</h2>
+          </div>
+          <div className="row wrap">
+            <button className="btn" aria-pressed={theme === 'dark'} onClick={() => setTheme('dark')}>
+              <Icon name="moon" size={13} /> Dark
+            </button>
+            <button className="btn" aria-pressed={theme === 'light'} onClick={() => setTheme('light')}>
+              <Icon name="sun" size={13} /> Light
+            </button>
+          </div>
+        </div>
+
         <div className="card card-pad">
           <div className="section-head">
             <h2>Your day</h2>
@@ -67,28 +104,30 @@ export function SettingsView() {
               </span>
             </div>
           </div>
+        </div>
 
-          <div className="field" style={{ marginTop: 16 }}>
-            <label>Days off</label>
-            <div className="day-toggles">
-              {DAYS.map((label, i) => (
-                <button
-                  key={i}
-                  className="day-toggle"
-                  aria-pressed={s.daysOff.includes(i)}
-                  aria-label={`Toggle day ${i}`}
-                  onClick={() =>
-                    updateSettings({
-                      daysOff: s.daysOff.includes(i) ? s.daysOff.filter((x) => x !== i) : [...s.daysOff, i],
-                    })
-                  }
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-            <span className="hint">Nothing gets scheduled on these. Deadlines still count.</span>
+        <div className="card card-pad day-card">
+          <div className="section-head">
+            <h2>Days off</h2>
           </div>
+          <div className="day-toggles">
+            {DAYS.map((label, i) => (
+              <button
+                key={i}
+                className="day-toggle"
+                aria-pressed={s.daysOff.includes(i)}
+                aria-label={`Toggle day ${i}`}
+                onClick={() =>
+                  updateSettings({
+                    daysOff: s.daysOff.includes(i) ? s.daysOff.filter((x) => x !== i) : [...s.daysOff, i],
+                  })
+                }
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <span className="hint">Nothing gets scheduled on these. Deadlines still count.</span>
         </div>
 
         <div className="card card-pad">
@@ -164,20 +203,6 @@ export function SettingsView() {
 
         <div className="card card-pad">
           <div className="section-head">
-            <h2>Appearance</h2>
-          </div>
-          <div className="row wrap">
-            <button className="btn" aria-pressed={theme === 'dark'} onClick={() => setTheme('dark')}>
-              <Icon name="moon" size={13} /> Dark
-            </button>
-            <button className="btn" aria-pressed={theme === 'light'} onClick={() => setTheme('light')}>
-              <Icon name="sun" size={13} /> Light
-            </button>
-          </div>
-        </div>
-
-        <div className="card card-pad">
-          <div className="section-head">
             <h2>Data</h2>
           </div>
           <p style={{ fontSize: 13.5, color: 'var(--text-2)', marginBottom: 14 }}>
@@ -194,7 +219,8 @@ export function SettingsView() {
             <button
               className="btn btn-danger"
               onClick={() => {
-                if (confirm('Erase every imported item, source and plan from this browser?')) reset();
+                setPhrase('');
+                setErasing(true);
               }}
             >
               <Icon name="trash" size={13} /> Erase everything
@@ -202,7 +228,53 @@ export function SettingsView() {
           </div>
         </div>
       </div>
-    </>
+
+      {erasing && (
+        <Modal title="Erase everything" onClose={() => setErasing(false)}>
+          <div className="danger-hero">
+            <span className="danger-mark">
+              <Icon name="trash" size={20} />
+            </span>
+            <strong>Station on this browser</strong>
+            <div className="danger-stats">
+              <span>
+                <Icon name="calendar" size={13} /> {items.length} items
+              </span>
+              <span>
+                <Icon name="clock" size={13} /> {blocks.length} blocks
+              </span>
+              <span>
+                <Icon name="link" size={13} /> {sources.length} sources
+              </span>
+            </div>
+          </div>
+
+          <div className="danger-confirm">
+            <label htmlFor="erase-phrase">
+              To confirm, type "{ERASE_PHRASE}" in the box below
+            </label>
+            <input
+              id="erase-phrase"
+              className="input input-danger"
+              value={phrase}
+              onChange={(e) => setPhrase(e.target.value)}
+              autoComplete="off"
+              autoFocus
+            />
+            <button
+              className="btn btn-danger btn-block"
+              disabled={!confirmed}
+              onClick={() => {
+                reset();
+                setErasing(false);
+              }}
+            >
+              Erase everything
+            </button>
+          </div>
+        </Modal>
+      )}
+    </div>
   );
 }
 
