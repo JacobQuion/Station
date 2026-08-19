@@ -1,4 +1,5 @@
 import {
+  startOfWeek,
   addDays,
   differenceInMinutes,
   format,
@@ -99,5 +100,8 @@ export function roundUp5(v: Date) {
   if (r) t.setMinutes(t.getMinutes() + (5 - r));
   return t;
 }
+
+/** Sunday-first, matching how the load chart reads a week. */
+export const startOfCalendarWeek = (v: Date) => startOfWeek(v, { weekStartsOn: 0 });
 
 export { addDays, startOfDay, isSameDay, format, differenceInMinutes };
