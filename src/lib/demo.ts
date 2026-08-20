@@ -141,6 +141,16 @@ export function buildDemo(sourceId: string, now = new Date()): { items: Item[]; 
     priority: 2,
   });
 
+  // Same idea, exactly one minute — the timer goes red the moment it starts.
+  push({
+    courseKey: 'cs',
+    kind: 'task',
+    title: 'Dummy: one-minute task',
+    due: iso(new Date(+now + 5 * 60 * 60_000)),
+    estimateMin: 1,
+    priority: 2,
+  });
+
   const examStart = at(now, 6, 15);
   push({
     courseKey: 'stat',
