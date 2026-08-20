@@ -87,7 +87,7 @@ export function SettingsView() {
               />
             </div>
             <div className="field">
-              <label htmlFor="s-cap">Max work per day</label>
+              <label htmlFor="s-cap">Max work/day (minutes)</label>
               <input
                 id="s-cap"
                 className="input mono"
