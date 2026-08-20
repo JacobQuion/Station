@@ -31,8 +31,9 @@ export function View({ onGoImport }: { onGoImport: () => void }) {
   const [todayOpen, setTodayOpen] = useState(false);
   /** The main rectangle shows one of these at a time. */
   const [panel, setPanel] = useState<'timer' | 'load'>('timer');
-  /** The rail shows one of these at a time. */
-  const [rail, setRail] = useState<'upcoming' | 'today'>('upcoming');
+  /** The rail shows one of these at a time. Today first — what's in front of you
+      before what's ahead of you. */
+  const [rail, setRail] = useState<'upcoming' | 'today'>('today');
   const now = new Date();
 
   const courseById = useMemo(() => selectors.courseById(courses), [courses]);
@@ -180,7 +181,9 @@ export function View({ onGoImport }: { onGoImport: () => void }) {
           <h1>{greeting(name)}</h1>
           <p>
             {summary.workLeft > 0
-              ? `${durationLabel(summary.workLeft)} of work left, ${summary.dueSoon} due this week.`
+              ? `${durationLabel(summary.workLeft)} of work left, ${summary.dueSoon} ${
+                  summary.dueSoon === 1 ? 'task' : 'tasks'
+                } due this week.`
               : 'Nothing outstanding. Enjoy it.'}
             {summary.overdue > 0 && <span className="warn-text"> {summary.overdue} overdue.</span>}
           </p>
