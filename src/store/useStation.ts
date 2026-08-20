@@ -356,7 +356,7 @@ export const useStation = create<State>()(
 
         replan(reason) {
           rebuild({ missed: 0 });
-          set({ notice: reason ?? 'Schedule rebuilt around where you actually are.' });
+          set({ notice: reason ?? 'Schedule recalculated.' });
         },
 
         updateSettings(patch) {
