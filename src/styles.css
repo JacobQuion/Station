@@ -14,6 +14,8 @@
   --accent-soft: #7c8cff22;
   --warn: #ff9457;
   --warn-soft: #ff945722;
+  --yellow: #f2c94c;
+  --yellow-soft: #f2c94c26;
   --danger: #ff6b6b;
   --danger-soft: #ff6b6b1f;
   --ok: #3dd68c;
@@ -44,6 +46,8 @@
   --accent-soft: #4c5fe016;
   --warn: #c2600f;
   --warn-soft: #c2600f14;
+  --yellow: #b78103;
+  --yellow-soft: #b7810318;
   --danger: #d93b3b;
   --danger-soft: #d93b3b14;
   --ok: #17945e;
@@ -287,6 +291,23 @@ a {
   padding: 0 11px;
   font-size: 12.5px;
   border-radius: 8px;
+}
+/* Momentary confirmation after a click. The label keeps its colour — the fill
+   carries the signal — and `!important` beats .btn-ghost's transparent base. */
+.btn-flash-ok,
+.btn-flash-yellow {
+  color: var(--text) !important;
+  box-shadow: 0 0 0 3px var(--flash-ring);
+}
+.btn-flash-ok {
+  --flash-ring: var(--ok-soft);
+  background: color-mix(in srgb, var(--ok) 26%, var(--surface-3)) !important;
+  border-color: var(--ok) !important;
+}
+.btn-flash-yellow {
+  --flash-ring: var(--yellow-soft);
+  background: color-mix(in srgb, var(--yellow) 30%, var(--surface-3)) !important;
+  border-color: var(--yellow) !important;
 }
 .btn-danger {
   color: var(--danger);
@@ -1181,6 +1202,10 @@ select.input {
 .rail-body {
   height: 430px;
   overflow-y: auto;
+  /* `overflow-y: auto` alone makes the x-axis `auto` too, which lets a trackpad
+     nudge the list sideways. This is a vertical list only. */
+  overflow-x: hidden;
+  overscroll-behavior-x: none;
   padding-right: 6px;
   margin-right: -6px;
 }
