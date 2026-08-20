@@ -66,7 +66,17 @@ export function NowCard() {
   const [tick, setTick] = useState(0);
   const [running, setRunning] = useState(false);
   const [elapsed, setElapsed] = useState(0);
+  const [flash, setFlash] = useState<'done' | 'skip' | null>(null);
   const startedAt = useRef<number | null>(null);
+  const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Confirmation flash on the button you just pressed.
+  const flashOn = (which: 'done' | 'skip') => {
+    setFlash(which);
+    if (flashTimer.current) clearTimeout(flashTimer.current);
+    flashTimer.current = setTimeout(() => setFlash(null), 700);
+  };
+  useEffect(() => () => void (flashTimer.current && clearTimeout(flashTimer.current)), []);
 
   const now = useMemo(() => new Date(), [tick]);
   const itemById = useMemo(() => selectors.itemById(items), [items]);
@@ -194,8 +204,9 @@ export function NowCard() {
             </button>
           )}
           <button
-            className="btn btn-lg"
+            className={`btn btn-lg${flash === 'done' ? ' btn-flash-ok' : ''}`}
             onClick={() => {
+              flashOn('done');
               stop(0);
               completeBlock(current.id);
             }}
@@ -203,8 +214,9 @@ export function NowCard() {
             <Icon name="check" size={13} /> Done
           </button>
           <button
-            className="btn btn-ghost btn-lg"
+            className={`btn btn-ghost btn-lg${flash === 'skip' ? ' btn-flash-yellow' : ''}`}
             onClick={() => {
+              flashOn('skip');
               stop(Math.floor(elapsed / 60));
               skipBlock(current.id);
             }}
