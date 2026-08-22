@@ -2,16 +2,18 @@ import { useEffect, useState } from 'react';
 import { useStation } from './store/useStation';
 import { ImportView } from './views/Import';
 import { View } from './views/View';
+import { Analyze } from './views/Analyze';
 import { SettingsView } from './views/SettingsView';
 import { Icon } from './components/ui';
 
-type Tab = 'import' | 'view' | 'settings';
+type Tab = 'import' | 'view' | 'analyze' | 'settings';
 
-/** `step` is not shown; it maps the Cmd-1…Cmd-3 shortcuts onto the tabs. */
+/** `step` is not shown; it maps the Cmd-1…Cmd-4 shortcuts onto the tabs. */
 const TABS: Array<{ id: Tab; step: string; label: string; icon: string }> = [
   { id: 'import', step: '1', label: 'Import', icon: 'download' },
   { id: 'view', step: '2', label: 'View', icon: 'eye' },
-  { id: 'settings', step: '3', label: 'Settings', icon: 'gear' },
+  { id: 'analyze', step: '3', label: 'Analyze', icon: 'search' },
+  { id: 'settings', step: '4', label: 'Settings', icon: 'gear' },
 ];
 
 export default function App() {
@@ -38,7 +40,7 @@ export default function App() {
     return () => document.removeEventListener('visibilitychange', onVisible);
   }, [replan]);
 
-  // ⌘1–⌘3 to move between the tabs.
+  // ⌘1–⌘4 to move between the tabs.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (!(e.metaKey || e.ctrlKey)) return;
@@ -71,7 +73,7 @@ export default function App() {
               className="tab"
               aria-current={tab === t.id}
               onClick={() => setTab(t.id)}
-              disabled={t.id === 'view' && !items.length}
+              disabled={(t.id === 'view' || t.id === 'analyze') && !items.length}
             >
               <Icon name={t.icon} size={13} />
               {t.label}
@@ -83,6 +85,7 @@ export default function App() {
       <main className="main">
         {tab === 'import' && <ImportView onDone={() => setTab('view')} />}
         {tab === 'view' && <View onGoImport={() => setTab('import')} />}
+        {tab === 'analyze' && <Analyze />}
         {tab === 'settings' && <SettingsView />}
       </main>
 
