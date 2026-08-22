@@ -1,10 +1,20 @@
 import { useState } from 'react';
 import { DEFAULT_SETTINGS, useStation } from '../store/useStation';
-import { durationLabel } from '../lib/time';
 import { Icon, Modal } from '../components/ui';
 
 /* Typed verbatim to unlock the erase button — no accidental clicks. */
 const ERASE_PHRASE = 'erase everything';
+
+/* The classic Pomodoro shape: a 25-minute sprint, a 5-minute breather, and
+   nothing shorter than one break scheduled. One click puts the focus block
+   settings back on it. */
+const POMODORO = {
+  focusMin: 25,
+  minBlockMin: 5,
+  breakMin: 5,
+  commuteMin: 10,
+  horizonDays: 14,
+} as const;
 
 const DAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 const toTime = (m: number) =>
@@ -21,6 +31,9 @@ export function SettingsView() {
   const [erasing, setErasing] = useState(false);
   const [phrase, setPhrase] = useState('');
   const confirmed = phrase.trim().toLowerCase() === ERASE_PHRASE;
+  const onPomodoro = (Object.keys(POMODORO) as Array<keyof typeof POMODORO>).every(
+    (k) => s[k] === POMODORO[k]
+  );
 
   return (
     <div className="settings-page">
@@ -99,9 +112,6 @@ export function SettingsView() {
                   updateSettings({ dailyCapacityMin: Math.max(30, Number(e.target.value) || 30) })
                 }
               />
-              <span className="hint">
-                {durationLabel(s.dailyCapacityMin)} — stops the planner cramming everything into today.
-              </span>
             </div>
           </div>
         </div>
@@ -182,7 +192,6 @@ export function SettingsView() {
                 value={s.commuteMin}
                 onChange={(e) => updateSettings({ commuteMin: Math.max(0, Number(e.target.value) || 0) })}
               />
-              <span className="hint">Getting there and back.</span>
             </div>
             <div className="field">
               <label htmlFor="s-horizon">Plan ahead (days)</label>
@@ -198,6 +207,16 @@ export function SettingsView() {
                 }
               />
             </div>
+            {/* Third column of the second row, so it lands under the break field. */}
+            <div className="field pomodoro-cell">
+              <button
+                className="btn pomodoro"
+                aria-pressed={onPomodoro}
+                onClick={() => updateSettings({ ...POMODORO })}
+              >
+                <Icon name="tomato" size={13} /> Default Pomodoro
+              </button>
+            </div>
           </div>
         </div>
 
@@ -206,8 +225,9 @@ export function SettingsView() {
             <h2>Data</h2>
           </div>
           <p style={{ fontSize: 13.5, color: 'var(--text-2)', marginBottom: 14 }}>
-            Everything lives in this browser — {items.length} items and {blocks.length} scheduled blocks.
-            Nothing is uploaded anywhere; imports go straight from your school's server to you.
+            Your data lives in this browser ({items.length} items and {blocks.length} scheduled
+            blocks). Your information is never uploaded anywhere; imports go straight from your
+            school's server to you.
           </p>
           <div className="row wrap">
             <button className="btn" onClick={() => download(useStation.getState())}>
