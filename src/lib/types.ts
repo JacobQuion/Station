@@ -50,6 +50,8 @@ export interface Item {
   progressMin: number;
 
   status: ItemStatus;
+  /** When this was finished. Absent on anything still open. */
+  completedAt?: ISO;
   /** 1 = low, 2 = normal, 3 = high. Nudges the effective deadline earlier. */
   priority: 1 | 2 | 3;
 
