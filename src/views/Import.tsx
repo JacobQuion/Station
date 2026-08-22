@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useState } from 'react';
 import { useStation } from '../store/useStation';
-import { Icon } from '../components/ui';
+import { FieldHelp, Icon } from '../components/ui';
 import { parseIcs } from '../lib/ics';
 import { format } from '../lib/time';
 import { stableId } from '../lib/id';
@@ -22,48 +22,6 @@ const STEPS = [
     p: 'Station tells you what to work on next, and rebuilds the plan when you fall behind.',
   },
 ];
-
-/* Field-level help. Opens as an overlay anchored to the label so the card never resizes. */
-function FieldHelp({ title, children }: { title: string; children: ReactNode }) {
-  const [open, setOpen] = useState(false);
-  const wrap = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e: MouseEvent) => {
-      if (!wrap.current?.contains(e.target as Node)) setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
-    };
-    document.addEventListener('mousedown', onDown);
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('mousedown', onDown);
-      document.removeEventListener('keydown', onKey);
-    };
-  }, [open]);
-
-  return (
-    <div className="help" ref={wrap}>
-      <button
-        type="button"
-        className="help-trigger"
-        aria-expanded={open}
-        aria-label={title}
-        onClick={() => setOpen((o) => !o)}
-      >
-        ?
-      </button>
-      {open && (
-        <div className="help-pop" role="dialog" aria-label={title}>
-          <b>{title}</b>
-          {children}
-        </div>
-      )}
-    </div>
-  );
-}
 
 export function ImportView({ onDone }: { onDone: () => void }) {
   const { sources, items, busy, connectIcs, connectCanvas, loadDemo, resync, removeSource } = useStation();
