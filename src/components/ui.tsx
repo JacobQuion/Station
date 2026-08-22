@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 export const COURSE_COLORS = [
   'var(--c0)',
@@ -12,6 +12,58 @@ export const COURSE_COLORS = [
 ];
 export const courseColor = (hue?: number) =>
   hue === undefined ? 'var(--text-3)' : COURSE_COLORS[hue % COURSE_COLORS.length];
+
+/* Field-level help. Opens as an overlay anchored to the label so the card never resizes.
+   `label` swaps the small `?` marker for inline text — same popover, but hung off a
+   word in a sentence rather than a field label. */
+export function FieldHelp({
+  title,
+  label,
+  children,
+}: {
+  title: string;
+  label?: ReactNode;
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  const wrap = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (!wrap.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  return (
+    <div className="help" ref={wrap}>
+      <button
+        type="button"
+        className={`help-trigger${label ? ' is-text' : ''}`}
+        aria-expanded={open}
+        aria-label={title}
+        onClick={() => setOpen((o) => !o)}
+      >
+        {label ?? '?'}
+      </button>
+      {open && (
+        <div className="help-pop" role="dialog" aria-label={title}>
+          <b>{title}</b>
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function Icon({ name, size = 16 }: { name: string; size?: number }) {
   const p: Record<string, ReactNode> = {
@@ -132,6 +184,23 @@ export function Icon({ name, size = 16 }: { name: string; size?: number }) {
       <>
         <path d="M1.4 8S4 3.6 8 3.6 14.6 8 14.6 8 12 12.4 8 12.4 1.4 8 1.4 8z" />
         <circle cx="8" cy="8" r="2.1" />
+      </>
+    ),
+    // A tomato: round body under a five-point calyx. Marks the Pomodoro preset.
+    tomato: (
+      <>
+        <circle cx="8" cy="10" r="4.8" />
+        <line x1="8" y1="5.2" x2="8" y2="2.4" />
+        <line x1="8" y1="5.2" x2="4.4" y2="3.5" />
+        <line x1="8" y1="5.2" x2="11.6" y2="3.5" />
+        <line x1="8" y1="5.2" x2="3.9" y2="5.7" />
+        <line x1="8" y1="5.2" x2="12.1" y2="5.7" />
+      </>
+    ),
+    search: (
+      <>
+        <circle cx="7" cy="7" r="4.6" />
+        <line x1="10.4" y1="10.4" x2="13.8" y2="13.8" />
       </>
     ),
     chevronDown: <polyline points="4 6.5 8 10.5 12 6.5" />,
