@@ -76,6 +76,7 @@ function mergeItems(existing: Item[], incoming: Item[], sourceId: string): Item[
             estimateMin: prev.estimateMin,
             progressMin: prev.progressMin,
             priority: prev.priority,
+            completedAt: prev.completedAt,
             status: next.status === 'done' ? 'done' : prev.status,
             notes: prev.notes ?? next.notes,
             createdAt: prev.createdAt,
@@ -310,6 +311,7 @@ export const useStation = create<State>()(
                     ...i,
                     status: done ? 'done' : 'todo',
                     progressMin: done ? i.estimateMin : i.progressMin,
+                    completedAt: done ? iso(new Date()) : undefined,
                     updatedAt: iso(new Date()),
                   }
                 : i
@@ -321,17 +323,22 @@ export const useStation = create<State>()(
         },
 
         logProgress(itemId, minutes) {
+          const at = iso(new Date());
           set((s) => ({
-            items: s.items.map((i) =>
-              i.id === itemId
-                ? {
-                    ...i,
-                    progressMin: Math.max(0, i.progressMin + minutes),
-                    status: i.progressMin + minutes >= i.estimateMin ? 'done' : i.status,
-                    updatedAt: iso(new Date()),
-                  }
-                : i
-            ),
+            items: s.items.map((i) => {
+              if (i.id !== itemId) return i;
+              const progressMin = Math.max(0, i.progressMin + minutes);
+              const done = progressMin >= i.estimateMin;
+              return {
+                ...i,
+                progressMin,
+                status: done ? 'done' : i.status,
+                // Only the crossing stamps the date, so logging more time
+                // against something already finished doesn't move it.
+                completedAt: done ? (i.completedAt ?? at) : i.completedAt,
+                updatedAt: at,
+              };
+            }),
           }));
           rebuild();
         },
