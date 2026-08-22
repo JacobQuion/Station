@@ -17,7 +17,7 @@ import {
   startOfDay,
 } from '../lib/time';
 import { BlockEntry, ItemEntry } from '../components/ItemEntry';
-import { Empty, Icon } from '../components/ui';
+import { Empty, FieldHelp, Icon } from '../components/ui';
 import { ItemEditor } from '../components/ItemEditor';
 import { NowCard } from '../components/NowCard';
 
@@ -29,6 +29,8 @@ export function View({ onGoImport }: { onGoImport: () => void }) {
   const [editing, setEditing] = useState<Item | 'new' | null>(null);
   const [expanded, setExpanded] = useState(false);
   const [todayOpen, setTodayOpen] = useState(false);
+  /** Block id whose estimate is being retyped inline on the Today rail. */
+  const [estimating, setEstimating] = useState<string | null>(null);
   /** The main rectangle shows one of these at a time. */
   const [panel, setPanel] = useState<'timer' | 'load'>('timer');
   /** The rail shows one of these at a time. Today first — what's in front of you
@@ -133,16 +135,12 @@ export function View({ onGoImport }: { onGoImport: () => void }) {
     const todo = items.filter((i) => i.status === 'todo' && !isCommitment(i));
     const workLeft = todo.reduce((s, i) => s + remainingMin(i), 0);
     const dueSoon = todo.filter((i) => i.due && +d(i.due) < horizon).length;
-    const overdue = todo.filter((i) => i.due && +d(i.due) < +now).length;
+    // Kept as items, not a count — the count is clickable and lists them.
+    const overdue = todo
+      .filter((i) => i.due && +d(i.due) < +now)
+      .sort((a, b) => +d(a.due!) - +d(b.due!));
     return { workLeft, dueSoon, overdue };
   }, [items, now, horizon]);
-
-  // Only the genuinely-impossible surfaces here; "tight" stays a quiet chip on the row.
-  const atRisk = (lastPlan?.risks ?? [])
-    .filter((r) => r.level === 'at-risk')
-    .map((r) => ({ ...r, item: itemById.get(r.itemId) }))
-    .filter((r) => r.item && r.item.status === 'todo')
-    .sort((a, b) => b.shortfallMin - a.shortfallMin);
 
   const byDay = useMemo(() => {
     const groups = new Map<string, Item[]>();
@@ -185,7 +183,24 @@ export function View({ onGoImport }: { onGoImport: () => void }) {
                   summary.dueSoon === 1 ? 'task' : 'tasks'
                 } due this week.`
               : 'Nothing outstanding. Enjoy it.'}
-            {summary.overdue > 0 && <span className="warn-text"> {summary.overdue} overdue.</span>}
+            {summary.overdue.length > 0 && (
+              <>
+                {' '}
+                <FieldHelp
+                  title={`${summary.overdue.length} overdue`}
+                  label={`${summary.overdue.length} overdue`}
+                >
+                  <ul className="pop-list">
+                    {summary.overdue.map((i) => (
+                      <li key={i.id}>
+                        <b>{i.title}</b>
+                        <span>{dueLabel(i.due!, now)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </FieldHelp>
+              </>
+            )}
           </p>
         </div>
         <div className="row">
@@ -273,34 +288,6 @@ export function View({ onGoImport }: { onGoImport: () => void }) {
             <Icon name={panel === 'load' ? 'clock' : 'chart'} size={14} />
             {panel === 'load' ? 'Timer' : 'Load'}
           </button>
-
-          {atRisk.length > 0 && (
-            <div>
-              <div className="section-head">
-                <h2>Won't fit</h2>
-                <span className="count">{atRisk.length}</span>
-              </div>
-              <div className="card card-pad">
-                {atRisk.slice(0, 5).map((r) => (
-                  <div className="risk-row" key={r.itemId}>
-                    <div className="meta">
-                      <strong>{r.item!.title}</strong>
-                      <span>
-                        {durationLabel(r.shortfallMin)} short before {dueLabel(r.item!.due ?? r.item!.start!)}
-                      </span>
-                    </div>
-                    <button
-                      className="btn btn-ghost btn-sm"
-                      onClick={() => setEditing(r.item!)}
-                      aria-label={`Adjust ${r.item!.title}`}
-                    >
-                      <Icon name="edit" size={13} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
 
         <div className="work-list">
@@ -381,6 +368,8 @@ export function View({ onGoImport }: { onGoImport: () => void }) {
                                 minutes={row.minutes}
                                 status={row.status}
                                 late={row.late}
+                                estimating={estimating === row.blockId}
+                                onEstimate={(open) => setEstimating(open ? row.blockId! : null)}
                                 actions={
                                   row.status === 'planned' ? (
                                     <div className="entry-actions">
